@@ -3,14 +3,14 @@
 ## Two independent apps
 
 ```
-apps/web/     Next.js 16 · React 19 · Tailwind 4 · GSAP · Motion
-apps/api/     Express 5 · Drizzle · Vitest · AI SDK
-compose.yaml  web + api + Postgres/pgvector
+apps/web/            Next.js 16 · React 19 · Tailwind 4 · GSAP · Motion
+apps/api/            Express 5 · Drizzle · Vitest · AI SDK
+docker-compose.yaml  web + api + Postgres/pgvector
 ```
 
 Each app owns its `package.json`, lockfile, `node_modules`, `Dockerfile` and
 `.gitignore`, and neither imports from the other. The only thing at the root is
-`compose.yaml`, which wires them together for local testing and owns nothing
+`docker-compose.yaml`, which wires them together for local testing and owns nothing
 they need to run.
 
 There is one deliberate exception: `apps/api/tests/datos-maestros.test.ts` reads

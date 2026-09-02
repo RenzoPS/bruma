@@ -26,12 +26,12 @@ One `.env`, at the repository root.
 cp .env.example .env      # fill in the Gemini key
 ```
 
-Everything reads it. Compose interpolates the `${...}` in `compose.yaml` from it,
+Everything reads it. Compose interpolates the `${...}` in `docker-compose.yaml` from it,
 and everything that runs outside Docker receives it explicitly:
 
 | Consumer | How it gets there |
 |---|---|
-| `docker compose` | picks up `.env` beside `compose.yaml` on its own |
+| `docker compose` | picks up `.env` beside `docker-compose.yaml` on its own |
 | `pnpm dev`, `db:maestros`, `rag:ingest`, `rag:calibrar` | `--env-file=../../.env` |
 | `drizzle-kit` (`db:migrate`, `db:studio`) | `process.loadEnvFile` in `drizzle.config.ts` |
 | `pnpm test:int` | `tests/env.ts`, loaded as a vitest setup file |
@@ -42,7 +42,7 @@ itself.
 
 `DATABASE_URL` is the one variable with two correct values. In `.env` it points at
 `localhost` and the published port, which is how the host reaches the container.
-Inside the Compose network the host is `postgres`, so `compose.yaml` redefines the
+Inside the Compose network the host is `postgres`, so `docker-compose.yaml` redefines the
 variable in its `environment:` block and overrides the file. Write it out in full:
 Node's `--env-file` does not expand `${...}`, so composing it from `POSTGRES_USER`
 and friends would not work.

@@ -13,10 +13,10 @@ visual system.
 ```
 bruma/
 ├── apps/
-│   ├── web/         Next.js 16 — the site
-│   └── api/         Express + TypeScript — Brumita's backend
-├── docs/            the technical documentation
-└── compose.yaml     the local stack: web + api + Postgres/pgvector
+│   ├── web/                Next.js 16 — the site
+│   └── api/                Express + TypeScript — Brumita's backend
+├── docs/                   the technical documentation
+└── docker-compose.yaml     the local stack: web + api + Postgres/pgvector
 ```
 
 ---
