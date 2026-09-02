@@ -1,0 +1,126 @@
+# Stack local de BRUMA: las dos imagenes de produccion contra un Postgres con
+# pgvector. Sirve para probar exactamente lo que se va a deployar.
+#
+#   docker compose up --build
+#
+# Para iterar en el front conviene igual `pnpm dev`: aca cada cambio pide un
+# rebuild de la imagen.
+#
+# El servicio `migrate` deja la base como tiene que estar antes de que arranque
+# la api: aplica las migraciones pendientes y carga los datos maestros (la carta
+# y los origenes de grano). Levantar el stack deja el sistema completo, no una
+# base vacia esperando que alguien se acuerde de un comando.
+#
+# La carga de datos maestros es idempotente, asi que correrla en cada `up` no
+# duplica nada. Lo que NO corre aca es la ingesta de embeddings: necesita cuota
+# de Gemini y regenerar los mismos vectores en cada arranque no aporta nada.
+
+name: bruma
+
+services:
+  postgres:
+    # La imagen oficial de postgres no trae pgvector, y el esquema lo necesita
+    # para el tipo vector(768) y el indice HNSW de `chunks`.
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      # Publicado para que `pnpm db:migrate`, `pnpm db:studio` y `pnpm dev`
+      # desde el host lleguen a esta misma base.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Desde Postgres 18 el volumen va en /var/lib/postgresql y no en su
+      # subcarpeta /data: la imagen guarda los datos en un directorio por
+      # version mayor. Montado en /data el contenedor no arranca.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      # `pg_isready` sin -U pregunta por el usuario del SO, no por el nuestro,
+      # y daria sano antes de tiempo. El $$ es un $ literal para el shell del
+      # contenedor: compose no lo interpola.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # Contenedor de un solo uso: arranca, pone la base al dia y termina. El
+  # compose lo trata como "completado con exito" cuando sale con codigo 0.
+  migrate:
+    build:
+      context: ./apps/api
+      # La imagen de runtime se instala con --prod y no tiene drizzle-kit. Este
+      # stage si, y ademas trae drizzle/ con los .sql.
+      target: migrate
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      # La carga no la usa, pero src/lib/env.ts valida el entorno entero al
+      # arrancar y falla si falta. Es a proposito: mejor enterarse aca.
+      GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Un one-shot que se reinicia solo es un loop infinito.
+    restart: "no"
+
+  api:
+    build:
+      context: ./apps/api
+      target: runtime
+    environment:
+      # Dentro de la red de compose el host es el nombre del servicio. Poner
+      # localhost apuntaria al propio contenedor de la api.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY}
+      NODE_ENV: production
+      PORT: 3001
+      # Lista blanca de CORS. Adentro de la red el front pega por el rewrite de
+      # Next y no hay preflight, pero el 3001 queda publicado igual.
+      ORIGENES_WEB: ${ORIGENES_WEB:-http://localhost:${WEB_PORT:-3000}}
+    ports:
+      - "${API_PORT:-3001}:3001"
+    depends_on:
+      postgres:
+        # No basta con que el contenedor exista: Postgres tarda unos segundos
+        # mas en aceptar conexiones.
+        condition: service_healthy
+      migrate:
+        # Espera a que termine, y con codigo 0. Si la migracion falla, la api no
+        # arranca contra una base a medio hacer.
+        condition: service_completed_successfully
+    healthcheck:
+      # La imagen es alpine y no trae curl, pero busybox trae wget.
+      # 127.0.0.1 y no localhost: en el contenedor localhost resuelve
+      # primero a ::1, y estos servidores escuchan en IPv4.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3001/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  web:
+    build: ./apps/web
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      # El front no le pega a la api desde el navegador: la proxea con un
+      # rewrite de Next, asi que el chat sale por el mismo origen que el sitio y
+      # no hay preflight. Adentro de la red el host es el nombre del servicio.
+      BRUMITA_API_URL: http://api:3001
+    depends_on:
+      # El sitio ya le habla a la api: sin ella, Brumita no responde.
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

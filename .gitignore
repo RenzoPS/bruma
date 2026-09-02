@@ -1,0 +1,4 @@
+# Credenciales del stack local: password de Postgres y API key de Gemini.
+.env
+.env.local
+!.env.example

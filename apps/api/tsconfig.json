@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    // Base generada por `tsc --init` (TypeScript 7), ajustada para que Node 24
+    // ejecute los .ts directamente con type stripping.
+    "module": "nodenext",
+    "target": "esnext",
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+
+    // Node borra los tipos sin transformarlos: enums, namespaces y parameter
+    // properties no son borrables y romperian en runtime. Esto los prohibe en
+    // tiempo de chequeo, que es donde queremos enterarnos.
+    "erasableSyntaxOnly": true,
+
+    // No compilamos: Node corre los .ts. tsc existe solo para verificar tipos,
+    // porque el type stripping los borra sin mirarlos.
+    "noEmit": true,
+
+    // Node resuelve el import tal cual esta escrito, asi que los relativos
+    // llevan la extension .ts real. Sin compilacion de por medio, es correcto.
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts", "drizzle.config.ts"]
+}

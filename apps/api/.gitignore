@@ -1,0 +1,13 @@
+node_modules/
+
+# Credenciales: la connection string de Neon y la API key de Gemini.
+.env
+.env.local
+!.env.example
+
+# Tests y build
+coverage/
+*.tsbuildinfo
+dist/
+
+*.log

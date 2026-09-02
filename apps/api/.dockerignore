@@ -1,0 +1,11 @@
+node_modules
+.next
+.env
+.env.*
+!.env.example
+coverage
+*.tsbuildinfo
+*.md
+# Los tests no van a ninguna imagen. drizzle/ si entra al contexto, porque
+# el stage `migrate` necesita los .sql; el stage `runtime` no lo copia.
+tests

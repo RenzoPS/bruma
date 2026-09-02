@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788203338358,
+      "tag": "0000_puzzling_zombie",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788226422152,
+      "tag": "0001_clave_natural",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788269277157,
+      "tag": "0002_match_chunks",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788318154673,
+      "tag": "0003_chunks_posicion_y_modelo",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788351146477,
+      "tag": "0004_chunks_ficha_hash",
+      "breakpoints": true
+    }
+  ]
+}

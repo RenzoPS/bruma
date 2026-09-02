@@ -1,0 +1,7 @@
+# pnpm 11 guarda acá qué dependencias pueden correr scripts de instalación.
+# Por defecto los bloquea todos, que es lo correcto: un postinstall es código
+# arbitrario de un tercero ejecutándose en tu máquina. Se habilitan de a uno.
+#
+# unrs-resolver baja el binario nativo del resolver de imports de ESLint.
+allowBuilds:
+  unrs-resolver: true

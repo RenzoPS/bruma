@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  /* Ground. Frio a proposito: el sesgo verdoso minimo es lo que separa este
+     mundo del crema tibio que usa toda la categoria. Si empieza a verse crema,
+     esta mal calibrado. */
+  --color-paper: #f2f3f0;
+  --color-paper-deep: #e4e6e1;
+  --color-linea: #c8cbc2;
+
+  --color-tinta: #241812;
+  --color-tinta-suave: #5a4a40;
+
+  /* Las cinco etapas del tueste, en el orden real en que ocurren. No es una
+     paleta elegida: es la secuencia por la que pasa el grano. */
+  --color-verde: #6f7f4b;
+  --color-amarillo: #a47c14;
+  --color-canela: #c1662f;
+  --color-tostado: #8a4b24;
+  --color-oscuro: #4a2a18;
+
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-display: var(--font-serif), Georgia, serif;
+
+  --spacing-estacion: clamp(4rem, 12vh, 8rem);
+}
+
+:root {
+  /* La etapa activa. Cada estacion la redefine al entrar en viewport, y todo
+     el color de acento de la pagina lee de aca: botones, filetes, subrayados,
+     el punto de la linea del proceso. Cambiar de estacion recolorea la
+     interfaz entera sin tocar un solo componente. */
+  --etapa: var(--color-verde);
+  --etapa-transicion: 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  /* Las mediciones son mediciones: se alinean en columna y no bailan al
+     actualizarse. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Los ejes de Archivo cubren todos los registros del sistema, asi que no hay
+   una segunda familia en ningun lado. */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 0.95;
+}
+
+.t-titulo {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.t-dato {
+  font-variation-settings: "wdth" 100;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.t-etiqueta {
+  font-variation-settings: "wdth" 75;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+/* El mismo registro de etiqueta, un cuerpo mas grande. Existe para el cierre
+   del hero: debajo de un logo que ocupa el 46% del cuadro, 0.75rem queda
+   huerfano. Va como clase y no como utilidad de Tailwind porque .t-etiqueta se
+   declara en esta misma hoja y le gana por orden a cualquier text-* que se le
+   ponga al lado. */
+.t-etiqueta-cierre {
+  font-size: 0.875rem;
+}
+
+@media (min-width: 1024px) {
+  .t-etiqueta-cierre {
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --etapa-transicion: 1ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

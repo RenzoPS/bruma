@@ -1,0 +1,7 @@
+# pnpm 11 guarda acá qué dependencias pueden correr scripts de instalación.
+# Por defecto los bloquea todos, que es lo correcto: un postinstall es código
+# arbitrario de un tercero ejecutándose en tu máquina. Se habilitan de a uno.
+#
+# esbuild lo necesita para bajar su binario nativo; lo usan vitest y drizzle-kit.
+allowBuilds:
+  esbuild: true
