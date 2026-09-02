@@ -16,7 +16,6 @@ bruma/
 │   ├── web/         Next.js 16 — the site
 │   └── api/         Express + TypeScript — Brumita's backend
 ├── docs/            the technical documentation
-├── .claude/         working notes and the original design specs
 └── compose.yaml     the local stack: web + api + Postgres/pgvector
 ```
 

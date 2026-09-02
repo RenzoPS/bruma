@@ -16,6 +16,7 @@ frontend with its own visual system.
 | [decisions.md](decisions.md) | Every decision that was measured, with the numbers |
 | [creditos-imagenes.md](creditos-imagenes.md) | Image provenance and attribution |
 | [prompts-gemini.md](prompts-gemini.md) | The prompts the images were generated from |
+| [specs/](specs/) | The two original design documents, in Spanish, kept as history |
 
 ## The one thing to read first
 

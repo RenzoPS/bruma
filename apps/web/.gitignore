@@ -13,3 +13,6 @@ coverage/
 next-env.d.ts
 
 *.log
+# AGENTS.md lo regenera next dev en cada corrida: fuera del repo, pero ignorado
+# para que no ensucie el arbol cada vez que se levanta el dev server.
+AGENTS.md
