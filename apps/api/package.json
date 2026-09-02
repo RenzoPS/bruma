@@ -9,7 +9,6 @@
     "@ai-sdk/google": "^4.0.58",
     "ai": "^7.0.85",
     "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "express-zod-safe": "^3.2.1",
@@ -28,18 +27,18 @@
     "vitest": "^4.1.11"
   },
   "scripts": {
-    "dev": "node --watch --env-file=.env src/server.ts",
-    "start": "node --env-file=.env src/server.ts",
+    "dev": "node --watch --env-file=../../.env src/server.ts",
+    "start": "node --env-file=../../.env src/server.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:int": "vitest run --config vitest.integracion.config.ts",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:maestros": "node --env-file=.env src/db/maestros/aplicar.ts",
+    "db:maestros": "node --env-file=../../.env src/db/maestros/aplicar.ts",
     "db:setup": "pnpm db:migrate && pnpm db:maestros",
     "db:studio": "drizzle-kit studio",
-    "rag:ingest": "node --env-file=.env src/scripts/ingest.ts",
-    "rag:calibrar": "node --env-file=.env src/scripts/calibrar.ts"
+    "rag:ingest": "node --env-file=../../.env src/scripts/ingest.ts",
+    "rag:calibrar": "node --env-file=../../.env src/scripts/calibrar.ts"
   }
 }

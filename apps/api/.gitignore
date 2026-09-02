@@ -1,9 +1,10 @@
 node_modules/
 
-# Credenciales: la connection string de Neon y la API key de Gemini.
+# Aca no va ningun .env: la configuracion del proyecto vive en el de la raiz.
+# Las reglas quedan igual por las dudas, para que un archivo suelto creado a
+# mano no se cuele en un commit.
 .env
 .env.local
-!.env.example
 
 # Tests y build
 coverage/

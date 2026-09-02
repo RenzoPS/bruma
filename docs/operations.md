@@ -20,22 +20,32 @@ enabled one at a time. The web app allows `unrs-resolver` and the API allows
 
 ## Environment
 
-Two `.env` files, and they are not redundant — each is read by a different
-process.
+One `.env`, at the repository root.
 
 ```bash
-cp .env.example .env                    # the Docker stack
-cd apps/api && cp .env.example .env     # the API and Drizzle, run from the host
+cp .env.example .env      # fill in the Gemini key
 ```
 
-| File | Read by | `DATABASE_URL` host |
-|---|---|---|
-| `.env` | `docker compose` | `postgres` — the service name, inside the network |
-| `apps/api/.env` | `pnpm dev`, `db:migrate`, `db:studio` | `localhost` — the published port |
+Everything reads it. Compose interpolates the `${...}` in `compose.yaml` from it,
+and everything that runs outside Docker receives it explicitly:
 
-The root file holds the credentials and the ports as separate pieces; Compose
-assembles `DATABASE_URL` from them, because the hostname differs depending on who
-is connecting.
+| Consumer | How it gets there |
+|---|---|
+| `docker compose` | picks up `.env` beside `compose.yaml` on its own |
+| `pnpm dev`, `db:maestros`, `rag:ingest`, `rag:calibrar` | `--env-file=../../.env` |
+| `drizzle-kit` (`db:migrate`, `db:studio`) | `process.loadEnvFile` in `drizzle.config.ts` |
+| `pnpm test:int` | `tests/env.ts`, loaded as a vitest setup file |
+
+The last two exist because neither tool accepts Node's `--env-file`: drizzle-kit
+looks for a `.env` in its own working directory, and vitest starts the process
+itself.
+
+`DATABASE_URL` is the one variable with two correct values. In `.env` it points at
+`localhost` and the published port, which is how the host reaches the container.
+Inside the Compose network the host is `postgres`, so `compose.yaml` redefines the
+variable in its `environment:` block and overrides the file. Write it out in full:
+Node's `--env-file` does not expand `${...}`, so composing it from `POSTGRES_USER`
+and friends would not work.
 
 | Variable | Where to get it |
 |---|---|

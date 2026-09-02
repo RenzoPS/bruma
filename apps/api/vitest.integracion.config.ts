@@ -11,8 +11,8 @@ export default defineConfig({
   test: {
     include: ["tests/integracion/**/*.test.ts"],
     // El resto de los scripts usa el --env-file de Node, pero acá el proceso lo
-    // arranca vitest. dotenv, que ya es dependencia, hace lo mismo desde adentro.
-    setupFiles: ["dotenv/config"],
+    // arranca vitest y ese flag no llega. Este setup carga el .env de la raíz.
+    setupFiles: ["./tests/env.ts"],
     testTimeout: 120_000,
     hookTimeout: 30_000,
     // En serie: las suites comparten la misma base y la misma cuota.

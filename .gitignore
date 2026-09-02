@@ -2,3 +2,8 @@
 .env
 .env.local
 !.env.example
+
+# Notas de trabajo para Claude Code: viven en .claude/ y no van al repo
+# publico. .claude/CLAUDE.md es una ubicacion nativa de "project instructions",
+# asi que se carga sola sin necesitar un import desde la raiz.
+.claude/
