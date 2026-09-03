@@ -42,5 +42,6 @@
     "rag:calibrar": "BRUMA_LOG=silencioso node --env-file=../../.env src/scripts/calibrar.ts",
     "rag:evaluar": "BRUMA_LOG=silencioso node --env-file=../../.env src/scripts/evaluar.ts",
     "rag:demo": "node --env-file=../../.env probar.ts"
-  }
+  },
+  "packageManager": "pnpm@11.2.2"
 }
