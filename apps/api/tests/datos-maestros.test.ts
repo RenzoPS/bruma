@@ -116,6 +116,61 @@ describe("coherencia con la carta del front", () => {
   });
 });
 
+/**
+ * Las alturas de cada origen, que vivian dos veces y ya habian derivado.
+ *
+ * Medido cuando se agrego este test: de los cuatro origenes, tres no coincidian.
+ * La pagina /granos decia que el Guji estaba a 1.940 msnm y la ficha —que es lo
+ * que Brumita cita— decia 2.050. Igual el Cerrado (1.100 contra 1.150) y el
+ * Narino (2.050 contra 2.100). Solo el Huila estaba bien.
+ *
+ * Es exactamente la falla que este archivo venia a cerrar para los precios, y no
+ * la cerraba para la altura: alguien lee un numero en la pagina, se lo pregunta
+ * a Brumita y recibe otro. La altura ademas es de los pocos datos duros que
+ * tienen las fichas, asi que es de lo que mas se pregunta.
+ *
+ * Se comparan contra la columna `altura` y no contra la prosa de la ficha, pero
+ * las dos tienen que decir lo mismo — eso lo cubre el test de abajo.
+ */
+describe("las alturas: la api y el front cuentan lo mismo", () => {
+  const PAGINA = new URL("../../web/src/app/granos/page.tsx", import.meta.url).pathname;
+
+  it.runIf(existsSync(PAGINA))("muestra la misma altura que tiene el catalogo", () => {
+    const fuente = readFileSync(PAGINA, "utf8");
+    // `guji: { altura: "2.050 msnm"` -> ["guji", "2.050"]
+    const enPagina = new Map(
+      [...fuente.matchAll(/(\w+):\s*\{\s*altura:\s*"([\d.]+)\s*msnm"/g)].map(
+        ([, clave, altura]) => [clave!, Number(altura!.replace(".", ""))],
+      ),
+    );
+
+    expect(enPagina.size, "no se leyo ninguna altura de la pagina").toBeGreaterThan(0);
+
+    for (const grano of GRANOS) {
+      const mostrada = enPagina.get(grano.clave);
+      expect(mostrada, `${grano.clave} no aparece en /granos`).toBeDefined();
+      expect(mostrada, `altura distinta para ${grano.clave}`).toBe(grano.altura);
+    }
+  });
+
+  it("la ficha dice la misma altura que la columna", () => {
+    // La columna es para filtrar y la ficha es lo que se recupera y se cita. Si
+    // se separan, `verGranos` y `buscarEnFichas` contestan distinto la misma
+    // pregunta, y las dos con seguridad.
+    for (const grano of GRANOS) {
+      if (grano.altura === null) continue;
+      // "2.050 metros" o "2050 m s n m": se buscan los digitos sin separador.
+      const enProsa = [...grano.ficha.matchAll(/([\d]\.?[\d]{3})\s*(?:metros|m\s?s\s?n\s?m|msnm)/g)]
+        .map(([, n]) => Number(n!.replace(".", "")));
+
+      expect(enProsa.length, `la ficha de ${grano.clave} no menciona una altura`).toBeGreaterThan(0);
+      expect(enProsa, `la ficha de ${grano.clave} dice otra altura que la columna`).toContain(
+        grano.altura,
+      );
+    }
+  });
+});
+
 describe("el local: la api y el front cuentan lo mismo", () => {
   /**
    * La dirección y el horario viven dos veces: en `horariosYUbicacion()` de la

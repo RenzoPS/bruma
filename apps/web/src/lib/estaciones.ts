@@ -25,7 +25,7 @@ export type Estacion = {
 };
 
 export const ESTACIONES: Estacion[] = [
-  { id: "verde", etapa: "verde", dato: { valor: "1.940", unidad: "msnm" }, imagen: "/estaciones/verde.jpg" },
+  { id: "verde", etapa: "verde", dato: { valor: "2.050", unidad: "msnm" }, imagen: "/estaciones/verde.jpg" },
   { id: "tostadora", etapa: "amarillo", dato: { valor: "11:20" }, imagen: "/estaciones/tostadora.jpg" },
   { id: "molino", etapa: "canela", dato: { valor: "15", unidad: "min" }, imagen: "/estaciones/molino.jpg" },
   { id: "taza", etapa: "tostado", dato: { valor: "25", unidad: "s" }, imagen: "/estaciones/taza.jpg" },

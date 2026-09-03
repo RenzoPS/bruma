@@ -22,10 +22,10 @@ const DATOS: Record<ClaveGrano, {
   imagen: string;
   etapa: string;
 }> = {
-  guji: { altura: "1.940 msnm", cuerpo: 2, acidez: 5, dulzor: 3, imagen: "/estaciones/verde.jpg", etapa: "var(--color-verde)" },
+  guji: { altura: "2.050 msnm", cuerpo: 2, acidez: 5, dulzor: 3, imagen: "/estaciones/verde.jpg", etapa: "var(--color-verde)" },
   huila: { altura: "1.750 msnm", cuerpo: 3, acidez: 3, dulzor: 4, imagen: "/estaciones/molino.jpg", etapa: "var(--color-amarillo)" },
-  cerrado: { altura: "1.100 msnm", cuerpo: 5, acidez: 1, dulzor: 4, imagen: "/estaciones/granos-bol.jpg", etapa: "var(--color-tostado)" },
-  narino: { altura: "2.050 msnm", cuerpo: 4, acidez: 3, dulzor: 5, imagen: "/estaciones/tueste-b.jpg", etapa: "var(--color-canela)" },
+  cerrado: { altura: "1.150 msnm", cuerpo: 5, acidez: 1, dulzor: 4, imagen: "/estaciones/granos-bol.jpg", etapa: "var(--color-tostado)" },
+  narino: { altura: "2.100 msnm", cuerpo: 4, acidez: 3, dulzor: 5, imagen: "/estaciones/tueste-b.jpg", etapa: "var(--color-canela)" },
 };
 
 const esGrano = (c: ClaveProducto): c is ClaveGrano => c in DATOS;
