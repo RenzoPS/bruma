@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { ProveedorIdioma } from "@/lib/i18n";
 import { ProveedorBrumita } from "@/lib/brumita";
 import { PanelBrumita } from "@/components/PanelBrumita";
+import { SITIO } from "@/lib/sitio";
 
 // Una sola familia para todo el sistema. El eje de ancho da el expanded del
 // display y el narrow de las etiquetas desde el mismo archivo, asi que el
@@ -29,10 +30,37 @@ const serif = Instrument_Serif({
   display: "swap",
 });
 
+/**
+ * Metadata del servidor, en castellano.
+ *
+ * El sitio traduce en el cliente —no hay rutas /es y /en, ver `ProveedorIdioma`—
+ * asi que esto es lo que ve un crawler y lo que viaja en un link compartido.
+ * `ProveedorIdioma` reescribe title y description al montar, pero eso llega
+ * tarde para un bot: para ellos BRUMA es un sitio en castellano, y esta bien,
+ * porque el local es de Buenos Aires.
+ */
 export const metadata: Metadata = {
+  metadataBase: new URL(SITIO),
   title: "BRUMA — Café de especialidad, tostado a la vista",
   description:
     "Cafetería de especialidad con tostadora propia en el local. Tostamos, molemos y servimos a puertas abiertas.",
+  applicationName: "BRUMA",
+  authors: [{ name: "Renzo" }],
+  openGraph: {
+    type: "website",
+    locale: "es_AR",
+    url: SITIO,
+    siteName: "BRUMA",
+    title: "BRUMA — Café de especialidad, tostado a la vista",
+    description:
+      "Cafetería ficticia con Brumita, una asistente RAG que responde con las herramientas como única fuente. Pieza de portfolio.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BRUMA — Café de especialidad, tostado a la vista",
+    description:
+      "Cafetería ficticia con Brumita, una asistente RAG que responde con las herramientas como única fuente. Pieza de portfolio.",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

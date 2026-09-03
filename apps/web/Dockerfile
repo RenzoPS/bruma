@@ -15,6 +15,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# La URL publica entra por build arg porque Next la hornea al prerenderizar: la
+# tarjeta de Open Graph y el sitemap quedan escritos en la imagen. Sin esto cae
+# al default de localhost, que en un deploy es una tarjeta que no resuelve.
+ARG NEXT_PUBLIC_SITIO
+ENV NEXT_PUBLIC_SITIO=${NEXT_PUBLIC_SITIO}
 RUN pnpm build
 
 FROM node:24-alpine

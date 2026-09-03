@@ -102,7 +102,16 @@ services:
     restart: unless-stopped
 
   web:
-    build: ./apps/web
+    build:
+      context: ./apps/web
+      args:
+        # La URL publica se hornea en el build y no se lee en runtime: el layout
+        # se prerenderiza, asi que la tarjeta de Open Graph y el sitemap quedan
+        # escritos en la imagen. Es la misma clase de trampa que el rewrite que
+        # hubo que sacar —ver src/app/api/brumita/chat/route.ts—, con la
+        # diferencia de que aca hornearlo es lo correcto: son URL del sitio, no
+        # de un servicio que cambia de host segun donde corra.
+        NEXT_PUBLIC_SITIO: ${NEXT_PUBLIC_SITIO:-http://localhost:${WEB_PORT:-3000}}
     ports:
       - "${WEB_PORT:-3000}:3000"
     environment:
