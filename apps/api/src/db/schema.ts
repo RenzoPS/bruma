@@ -64,9 +64,9 @@ export const granos = pgTable("granos", {
  * `DIMENSIONES_EMBEDDING` en src/dominio.ts, que es tambien lo que se le pide a
  * Gemini via outputDimensionality: el numero vive una sola vez.
  *
- * El indice HNSW no cambia nada con ~70 chunks (a esa escala el scan secuencial
- * gana). Esta para que el sistema sea correcto a escala, y para poder medir la
- * diferencia con y sin indice en vez de suponerla.
+ * El indice HNSW no cambia nada con los 20 chunks que hay hoy (a esa escala el
+ * scan secuencial gana). Esta para que el sistema sea correcto a escala, y para
+ * poder medir la diferencia con y sin indice en vez de suponerla.
  */
 export const chunks = pgTable(
   "chunks",

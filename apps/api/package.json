@@ -39,6 +39,8 @@
     "db:setup": "pnpm db:migrate && pnpm db:maestros",
     "db:studio": "drizzle-kit studio",
     "rag:ingest": "node --env-file=../../.env src/scripts/ingest.ts",
-    "rag:calibrar": "node --env-file=../../.env src/scripts/calibrar.ts"
+    "rag:calibrar": "BRUMA_LOG=silencioso node --env-file=../../.env src/scripts/calibrar.ts",
+    "rag:evaluar": "BRUMA_LOG=silencioso node --env-file=../../.env src/scripts/evaluar.ts",
+    "rag:demo": "node --env-file=../../.env probar.ts"
   }
 }
