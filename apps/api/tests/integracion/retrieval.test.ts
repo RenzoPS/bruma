@@ -10,6 +10,7 @@ import {
   UMBRAL,
   buscarEnFichas,
 } from "../../src/rag/retrieval.ts";
+import { verGranos } from "../../src/services/catalogo.service.ts";
 import { EN_DOMINIO, FUERA_DE_DOMINIO_CERCANO, FUERA_DE_DOMINIO_LEJANO } from "../casos-retrieval.ts";
 
 /**
@@ -91,6 +92,44 @@ describe("buscarEnFichas", () => {
     expect(top?.granoNombre).toBeTruthy();
     // El contenido citado tiene que ser el texto real, no un id.
     expect(top?.contenido.length).toBeGreaterThan(100);
+  });
+
+  /**
+   * Los datos duros viajan con la prosa, y este test es lo que lo sostiene.
+   *
+   * Sin ellos el modelo tenía la descripción de un grano y ningún precio ni
+   * stock, y completaba el hueco: `pnpm rag:evaluar` lo agarró recomendando el
+   * Nariño —agotado— a $18.500, un precio que no existe. Ver la migración 0005.
+   *
+   * Se compara contra `verGranos` y no contra un número escrito acá: los dos
+   * tienen que leer el mismo dato de la misma tabla, y eso es lo que hay que
+   * probar. Un literal se quedaría viejo el día que cambie un precio.
+   */
+  it("trae el precio y el stock del grano, iguales a los del catálogo", async () => {
+    const [chunk] = await buscarEnFichas("cuál tiene gusto a chocolate");
+    expect(chunk, "no recuperó nada con lo que comparar").toBeDefined();
+
+    const catalogo = await verGranos();
+    const grano = catalogo.find((g) => g.nombre === chunk!.granoNombre);
+
+    expect(grano, `${chunk!.granoNombre} no está en el catálogo`).toBeDefined();
+    expect(chunk!.granoPrecio, "el precio del chunk no es el del catálogo").toBe(grano!.precio);
+    expect(chunk!.granoStock, "el stock del chunk no es el del catálogo").toBe(grano!.stock);
+  });
+
+  it("marca como agotado el grano que no tiene stock", async () => {
+    // Que el retrieval devuelva un agotado está bien —alguien puede preguntar a
+    // qué sabe— pero tiene que venir marcado. Que llegue sin marca es lo que
+    // hacía que Brumita lo ofreciera como disponible.
+    const chunks = await buscarEnFichas("durazno, miel y fruta madura, bien dulce");
+    const agotados = chunks.filter((c) => !c.granoStock);
+
+    const catalogo = await verGranos();
+    const sinStock = new Set(catalogo.filter((g) => !g.stock).map((g) => g.nombre));
+
+    for (const chunk of agotados) {
+      expect(sinStock.has(chunk.granoNombre), `${chunk.granoNombre} no está agotado`).toBe(true);
+    }
   });
 });
 

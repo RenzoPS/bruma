@@ -1,7 +1,7 @@
 import { and, asc, eq, lte, type SQL } from "drizzle-orm";
 import { db } from "../db/client.ts";
 import { granos, productos } from "../db/schema.ts";
-import type { Categoria, Perfil, Proceso } from "../dominio.ts";
+import { GRAMOS_POR_BOLSA, type Categoria, type Perfil, type Proceso } from "../dominio.ts";
 
 /**
  * La otra mitad de lo que sabe Brumita: la carta y el catálogo de grano.
@@ -68,6 +68,8 @@ export type GranoDeCatalogo = {
   perfil: string;
   altura: number | null;
   precio: number;
+  /** Cuánto trae la bolsa. Es el mismo para todos: ver `GRAMOS_POR_BOLSA`. */
+  gramos: number;
   stock: boolean;
 };
 
@@ -110,7 +112,7 @@ export async function verGranos({
     .where(filtros.length > 0 ? and(...filtros) : undefined)
     .orderBy(asc(granos.precio));
 
-  return filas.map((f) => ({ ...f, precio: aPesos(f.precio) }));
+  return filas.map((f) => ({ ...f, precio: aPesos(f.precio), gramos: GRAMOS_POR_BOLSA }));
 }
 
 /**

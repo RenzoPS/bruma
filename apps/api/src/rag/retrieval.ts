@@ -10,10 +10,27 @@ import { embeberConsulta } from "./embeddings.ts";
  * Acá adentro solo vive lo que es significado: prosa sobre orígenes.
  */
 
+/**
+ * Un pedazo de ficha con la identidad y los datos duros de su grano.
+ *
+ * `precio` y `stock` viajan al lado de la prosa, y eso cierra una alucinación
+ * medida: `pnpm rag:evaluar` agarró a Brumita recomendando el Nariño —que
+ * `verGranos` había filtrado por estar agotado— y poniéndole un precio de
+ * $18.500 que no existe. Los chunks eran solo texto, así que el modelo tenía la
+ * descripción de un grano sin nada que dijera cuánto sale ni si está, y lo
+ * completó. Ver la migración 0005.
+ *
+ * No mezcla lo semántico con lo exacto: `contenido` sale del vector, `precio` y
+ * `stock` salen del JOIN contra `granos`, que es la misma tabla que lee
+ * `verGranos`. Es el mismo dato, no una copia.
+ */
 export type ChunkRecuperado = {
   contenido: string;
   granoClave: string;
   granoNombre: string;
+  /** En pesos, como lo diría una persona. La función lo devuelve en centavos. */
+  granoPrecio: number;
+  granoStock: boolean;
   similitud: number;
 };
 
@@ -90,6 +107,8 @@ export async function buscarEnFichas(
     contenido: string;
     grano_clave: string;
     grano_nombre: string;
+    grano_precio: number;
+    grano_stock: boolean;
     similitud: number;
   }>(
     sql`SELECT * FROM match_chunks(${JSON.stringify(embedding)}::vector, ${umbral}, ${maximo})`,
@@ -99,6 +118,10 @@ export async function buscarEnFichas(
     contenido: fila.contenido,
     granoClave: fila.grano_clave,
     granoNombre: fila.grano_nombre,
+    // A pesos acá y no en la función, por la misma razón que en el servicio de
+    // catálogo: la base guarda centavos y la conversación habla en pesos.
+    granoPrecio: fila.grano_precio / 100,
+    granoStock: fila.grano_stock,
     similitud: fila.similitud,
   }));
 }

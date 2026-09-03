@@ -27,6 +27,20 @@ export const PERFILES = ["claro", "medio", "oscuro"] as const;
 export type Perfil = (typeof PERFILES)[number];
 
 /**
+ * Cuánto pesa una bolsa de grano.
+ *
+ * Vivía en dos comentarios y en el front, y en ninguna tool. `pnpm rag:evaluar`
+ * agarró a Brumita diciendo "la bolsa de 250 g sale $15.500" con el precio bien
+ * y los gramos sacados de la nada: el número es correcto —250 g es la bolsa
+ * típica de especialidad— pero ninguna herramienta se lo había dado.
+ *
+ * Que un dato inventado salga bien por casualidad es peor que uno que sale mal,
+ * porque no deja síntoma. La respuesta no era mentir sobre esto, era dárselo:
+ * el modelo lo iba a decir igual, así que ahora lo dice porque lo leyó.
+ */
+export const GRAMOS_POR_BOLSA = 250;
+
+/**
  * Las dimensiones del vector, y por qué viven acá y no en el módulo de
  * embeddings.
  *
