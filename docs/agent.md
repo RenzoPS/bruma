@@ -151,10 +151,43 @@ The near-domain assertions match on a pattern (`/\bno\b|tampoco|solo/`). A wrong
 answer containing the word "no" passes. It is the softest part of the suite and
 it gives more confidence than it earns.
 
-More broadly: retrieval and routing are measured, **answer quality is not**.
-There is no set of expected answers. A versioned set of 30–50 questions scoring
-*question → correct tool → correct evidence → correct answer* is the most
-valuable thing missing from this project.
+Answer quality is measured separately, by `pnpm rag:evaluar`: 22 versioned
+questions scored on routing, grounding and whether the answer answers. Routing
+and grounding are decided without a model — grounding checks that every number of
+three digits or more in an answer appears in what the tools returned, so an
+invented price is proved rather than argued. That has its own document:
+[evals.md](evals.md).
+
+It caught two real failures on its first run, both now fixed: a bean recommended
+as available that `verGranos` had filtered out for being sold out, quoted at a
+price that does not exist; and a true fact — the 250 g bag — that no tool had
+ever provided.
+
+The set is 22 questions. That is enough to catch a class of failure, not enough
+to certify quality.
+
+## The step budget, and the silent failure it caused
+
+`stopWhen: isStepCount(8)` caps how many tool turns the model may chain before it
+has to answer. It used to be 5, and 5 was too few — measured, not guessed.
+
+Running *"¿qué grano tenés que sea frutado y que me lo pueda llevar hoy?"* five
+times gave 2, 2, 2, 5 and 3 tool calls. The run that hit 5 spent its whole budget
+searching and had no turn left to write, so the visitor got an **empty bubble**
+and the server logged a clean `200`. The cap was not stopping a loop; it was
+cutting off an answer that was about to arrive. At 8, six consecutive runs came
+back with 1–3 calls and no empty answers.
+
+The cap still has to exist — it is the only thing standing between a strange
+conversation and an unbounded spend. So the failure is handled in the other two
+places rather than removed:
+
+- The route logs `chat.sale` at **warn** when the answer is empty, with the SDK's
+  `finishReason`. An empty answer leaves no other trace: a blank bubble and a
+  200.
+- The chat panel renders a message and a retry button instead of an empty turn.
+  A blank bubble is the worst way to fail, because it does not look like an error
+  — it looks like Brumita had nothing to say.
 
 ## Transport
 

@@ -128,6 +128,24 @@ filter is written. Measured again with 20,020 rows, both filter forms use
 So the index is reachable, the design is right, and the isolated `ORDER BY` was
 never the real test.
 
+### Chunks carry their bean's hard facts
+
+`match_chunks` returns `grano_precio` and `grano_stock` alongside the prose. That
+is not convenience — it closes a measured hallucination, found by
+`pnpm rag:evaluar` on its first run.
+
+Asked for something fruity *to take home today*, `verGranos(soloConStock: true)`
+correctly returned the three beans in stock and excluded the sold-out Nariño. The
+vector search knew nothing about stock, returned the Nariño's tasting notes
+anyway, and the model recommended it at **$18.500** — a price no bean has,
+because no tool had given it one. One gap, two failures.
+
+This does not blur the line between exact and semantic. `contenido` still comes
+out of a vector; `precio` and `stock` come out of a `JOIN` against `granos`, the
+same table `verGranos` reads. It is the same datum, not a copy. What it removes
+is the gap where the model had to invent. See migration `0005` and
+[evals.md](evals.md).
+
 ## The threshold, and what it cannot do
 
 `pnpm rag:calibrar` answers two separate questions, and keeping them apart is the
@@ -207,3 +225,9 @@ No reranker, no hybrid lexical search, no query rewriting, no per-chunk hashing
 for incremental reindexing, no `rag_documents` abstraction, no LangChain, no
 LlamaIndex. With 20 chunks none of it earns its place, and not having it is as
 much a part of the reasoning as having the rest.
+
+## How the answers are measured
+
+`pnpm rag:calibrar` measures the retrieval. Whether the *answer* is any good is
+measured separately by `pnpm rag:evaluar`, on three axes, two of which need no
+model at all. That has its own document: [evals.md](evals.md).

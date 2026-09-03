@@ -142,15 +142,56 @@ Measured: an element with `translate-y-full` and a `yPercent: 100` tween sat at
 254 px — twice its height — and finished at 127 px, exactly one height below the
 fold, so it never appeared. Initial states are set with `gsap.set()`.
 
+## Answer quality
+
+**Grounding is checked with arithmetic, not with a judge.** Every number of three
+digits or more in an answer must appear in what the tools returned. A price that
+is not in the output of `buscarProductos` is an invented price, and that is a
+fact rather than an opinion. The LLM judge is kept for the one axis that has no
+arithmetic form — whether the answer answers the question — because a judge
+shares the blind spots of the family it judges. Measured on the first run: it
+failed three correct answers, twice by keyword-matching its own criterion.
+
+**The retrieval layer used to leak past the exact layer, and that produced a
+hallucination.** `verGranos(soloConStock: true)` excluded the sold-out Nariño;
+`buscarEnFichas` returned its tasting notes anyway, knowing nothing about stock;
+the model recommended it at $18.500, a price no bean has. Chunks now carry the
+price and stock of their bean, from the same `JOIN` that `verGranos` reads
+(migration `0005`). This does not blur the exact/semantic split — `contenido`
+still comes from a vector and `precio` from a column — it removes the gap the
+model was filling in.
+
+**A fact that was right by luck is still ungrounded.** "La bolsa de 250 g"
+appeared in two code comments and in no tool output. The model was reciting a
+convention it knew. `GRAMOS_POR_BOLSA` now travels with the tools that describe a
+bean: it was going to say it either way, so now it says it because it read it.
+
+## Observability
+
+**Structured JSON to stdout, not an SDK.** Render and Cloud Run collect stdout
+and parse JSON on their own; one more piece that can fall over costs more than it
+saves at this size. If OpenTelemetry is ever needed, the place to wire it is
+`src/lib/registro.ts` and not fifty scattered calls.
+
+**The trace id travels through `AsyncLocalStorage`.** A tool runs three layers
+below the route — Express, the SDK, the model — and none of those layers is ours,
+so there is no parameter to thread. The alternative was a global that two
+concurrent questions would trample.
+
+**What is deliberately not logged:** the visitor's question text and the answer
+text (only lengths, which explain a latency without keeping what somebody wrote)
+and the IP, which the rate limiter uses in memory and never needs to persist.
+
 ## Still open
 
-- No answer-quality evals. Retrieval and routing are measured; whether an answer
-  is *good* is not. A versioned set of 30–50 questions scoring
-  *question → correct tool → correct evidence → correct answer* is the most
-  valuable thing missing.
+- The eval set is 22 questions. Enough to catch a class of failure, not enough to
+  certify quality; 50+ with adversarial paraphrases would be.
 - The near-domain guardrail tests assert on a text pattern. A wrong answer
-  containing the word "no" passes.
-- No observability: nothing records which tool ran, with what arguments, at what
-  latency.
+  containing the word "no" passes. The evals cover this better, but those tests
+  are still the ones in the suite.
 - Retrieval Top-1 is 17/18.
+- The rate limiter and the model circuit breaker are per-process.
+- The site's server-rendered metadata is Spanish only. Language is chosen on the
+  client, so a crawler sees a monolingual site. Deliberate — three pages did not
+  justify per-locale routes — but it is a real limitation, not a non-issue.
 - The rate limiter and the model circuit breaker are per-process.

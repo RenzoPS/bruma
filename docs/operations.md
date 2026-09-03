@@ -62,17 +62,20 @@ the server starts, not when a visitor asks the first question.
 | In `apps/api` | |
 |---|---|
 | `pnpm dev` | Dev server on :3001, watching |
-| `pnpm test` | Unit tests — no Docker, no API key, under four seconds |
+| `pnpm test` | Unit tests — no Docker, no API key, under three seconds |
 | `pnpm test:int` | Integration — needs Postgres, the index and Gemini quota |
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm db:generate` · `pnpm db:migrate` | Migrations |
 | `pnpm db:maestros` · `pnpm db:setup` | Reference data, and both in order |
 | `pnpm rag:ingest` | Rebuild the vector index |
 | `pnpm rag:calibrar` | Re-measure retrieval and the threshold |
+| `pnpm rag:evaluar` | Score answer quality on three axes — see [evals.md](evals.md) |
+| `pnpm rag:demo` | Prints what an embedding actually is, for a reader |
 
 | In `apps/web` | |
 |---|---|
 | `pnpm dev` · `pnpm build` · `pnpm typecheck` · `pnpm lint` | |
+| `pnpm test` | The pure helpers behind the "Consultó" label — no jsdom |
 
 | At the root | |
 |---|---|
@@ -181,6 +184,12 @@ saves at this size.
 | Database | Neon | $0 |
 | Models | Gemini free tier | $0 |
 
+`NEXT_PUBLIC_SITIO` has to be set at **build** time for the web app: the layout
+is prerendered, so the Open Graph card, `robots.txt` and `sitemap.xml` are
+written into the image. Left at its default the card points at localhost, which
+is a link preview that resolves nowhere. `docker-compose.yaml` passes it as a
+build arg for the same reason.
+
 Render sleeps after 15 minutes and takes about a minute to wake, but gives 750
 h/month: enough to stay awake with a ping every 10 minutes to `/healthz`, which
 is why that endpoint deliberately never touches the database. Cloud Run starts in
@@ -195,3 +204,36 @@ pnpm db:migrate  →  pnpm db:maestros  →  app ready
 
 `rag:ingest` is not in that chain. Run it when the fichas change, which the boot
 check will remind you about if you forget.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every push to `main` and every pull request:
+types and unit tests for the API, types, lint and build for the web app. Two
+jobs, in parallel, because the apps are independent and each has its own
+lockfile.
+
+The build is in there and not as an afterthought: `output: "standalone"`
+resolves things at build time, so a configuration mistake only shows up there.
+That has already happened once — see the API proxy section above.
+
+**The integration suite and `rag:evaluar` are deliberately out of CI.** Both
+spend Gemini quota against a free tier, and a pipeline that goes red because a
+quota ran out is a pipeline people learn to ignore. They are run by hand before
+a release.
+
+## Logs
+
+The API writes one JSON object per line to stdout: request in, each tool with its
+arguments, how long it took and how many rows it returned, the model falling back
+to the secondary, request out with the total latency and token count. Everything
+belonging to one question shares a `rastro` id.
+
+```json
+{"ts":"...","nivel":"info","rastro":"a1b2c3d4","evento":"tool","tool":"buscarEnFichas","largoConsulta":24,"ms":402,"resultados":5,"similitudes":[0.662,0.66,0.656],"granos":["huila","narino"]}
+```
+
+Render and Cloud Run collect stdout and parse JSON without extra configuration,
+which is why there is no logging SDK here.
+
+Scripts set `BRUMA_LOG=silencioso` because their output *is* the report, and
+interleaved tool events make a scorecard unreadable.

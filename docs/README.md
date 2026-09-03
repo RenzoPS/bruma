@@ -13,8 +13,9 @@ frontend with its own visual system.
 | [data.md](data.md) | Schema, master data, the three lifecycles, migrations |
 | [frontend.md](frontend.md) | The design system, the hero, the chat surface |
 | [operations.md](operations.md) | Running it, Docker, environment, commands, deploying |
+| [evals.md](evals.md) | How answer quality is measured, and what the score does not say |
 | [decisions.md](decisions.md) | Every decision that was measured, with the numbers |
-| [creditos-imagenes.md](creditos-imagenes.md) | Image provenance and attribution |
+| [images-credits.md](images-credits.md) | Image provenance and attribution |
 | [prompts-gemini.md](prompts-gemini.md) | The prompts the images were generated from |
 | [specs/](specs/) | The two original design documents, in Spanish, kept as history |
 
