@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { conexion } from "../../src/db/client.ts";
 import { responder } from "../../src/agente/brumita.ts";
+import { verGranos } from "../../src/services/catalogo.service.ts";
 import { FUERA_DE_DOMINIO_CERCANO } from "../casos-retrieval.ts";
 
 /**
@@ -20,8 +21,40 @@ afterAll(async () => {
   await conexion.end();
 });
 
+/**
+ * El hueco entre preguntas, y por qué existe.
+ *
+ * Medido: esta suite hacía 429 sobre `gemini-3.1-flash-lite`, con
+ * `"quotaValue": "15"` en el cuerpo del error — quince pedidos por minuto. La
+ * corrida entera son veintidós casos que salen en fila, así que los pasaba
+ * cómodo.
+ *
+ * Lo que lo volvía peor es una interacción que no se ve leyendo un archivo
+ * solo: cuando el primario devuelve 429, el breaker de `brumita.ts` lo enfría
+ * **media hora**, así que a partir de ahí TODA la corrida sale por el respaldo,
+ * que tiene su propia cuota chica. Un solo 429 cascadea sobre los casos que
+ * quedan, y todos fallan con un error que se lee como un fallo de calidad.
+ *
+ * Cuatro segundos dejan la corrida en unos quince pedidos por minuto contando
+ * los dos modelos. La suite tarda más y esa es la contra, asumida: una suite
+ * lenta que dice la verdad vale más que una rápida que falla por cuota y hace
+ * dudar del sistema.
+ *
+ * `retry: 1` en la config sigue estando y sigue siendo para otra cosa: los 503
+ * sueltos de Google, que son un pico y no un límite.
+ */
+const HUECO_MS = 4_000;
+let ultima = 0;
+
+async function enTurno() {
+  const faltan = HUECO_MS - (Date.now() - ultima);
+  if (faltan > 0) await new Promise((listo) => setTimeout(listo, faltan));
+  ultima = Date.now();
+}
+
 /** Corre una pregunta y devuelve el texto final y qué tools se usaron. */
 async function preguntar(texto: string, idioma: "es" | "en" = "es") {
+  await enTurno();
   const resultado = responder([{ role: "user", content: texto }], idioma);
 
   const llamadas = await resultado.toolCalls;
@@ -56,15 +89,53 @@ describe("el ruteo: qué consulta para cada pregunta", () => {
     expect(respuesta).toContain("7:30");
   });
 
-  it("una pregunta que cruza sabor y precio usa las dos fuentes", async () => {
-    const { tools } = await preguntar(
+  /**
+   * Sabor y precio: una sola tool alcanza, y eso es nuevo.
+   *
+   * Este test pedía dos tools y dejó de ser cierto con la migración 0005, que
+   * hizo que `buscarEnFichas` devolviera el precio y el stock del grano junto
+   * con la prosa. Ahora el modelo contesta las dos mitades con una llamada.
+   *
+   * **Se cambió el test y no el código, y conviene decir por qué.** Aquella
+   * segunda llamada no era una virtud: era la consecuencia de que los chunks
+   * llegaran sin los datos duros de su grano, que es exactamente el hueco por
+   * el que `rag:evaluar` lo agarró inventando un precio de $18.500. Menos
+   * llamadas y ningún hueco donde inventar es mejor sistema, aunque sea un
+   * ruteo menos vistoso.
+   *
+   * Lo que se mide ahora es lo que importaba desde el principio: que la
+   * respuesta traiga las dos mitades y que el precio sea el de la base.
+   */
+  it("una pregunta que cruza sabor y precio contesta las dos mitades", async () => {
+    const { tools, respuesta } = await preguntar(
       "¿cuál me recomendás si tomo prensa francesa, y cuánto sale la bolsa?",
     );
 
-    // El ruteo no es un if nuestro: se declaran las cuatro y el modelo elige.
-    // Este caso es el que justifica esa decisión.
-    expect(tools.length).toBeGreaterThanOrEqual(2);
     expect(tools).toContain("buscarEnFichas");
+
+    // El precio tiene que ser uno de los reales. Sin separador de miles para no
+    // depender de cómo lo escriba el modelo.
+    const enRespuesta = respuesta.replace(/[.\s]/g, "");
+    const precios = (await verGranos()).map((g) => String(g.precio));
+    expect(
+      precios.some((p) => enRespuesta.includes(p)),
+      `no dijo ningún precio del catálogo (${precios.join(", ")}): ${respuesta}`,
+    ).toBe(true);
+  });
+
+  /**
+   * El ruteo a dos tools, con una pregunta que de verdad lo necesita.
+   *
+   * El horario no está en ninguna ficha ni se puede deducir de una, así que
+   * estas dos mitades no hay forma de resolverlas con una sola llamada. Es el
+   * caso que justifica declarar las cuatro tools y dejar elegir al modelo en
+   * vez de escribir un `if` nuestro.
+   */
+  it("una pregunta que cruza ficha y horario usa las dos fuentes", async () => {
+    const { tools } = await preguntar("¿cuál me recomendás para prensa francesa y a qué hora abren?");
+
+    expect(tools).toContain("buscarEnFichas");
+    expect(tools).toContain("horariosYUbicacion");
   });
 });
 

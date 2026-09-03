@@ -29,6 +29,13 @@ export default defineConfig({
      *
      * Ojo con lo que esto puede esconder: si un caso empieza a necesitar el
      * reintento siempre, eso ya no es un pico de Google y hay que mirarlo.
+     *
+     * **Lo que este reintento NO arregla, y costó una corrida entera
+     * entenderlo**: el 429 por cuota. Un reintento inmediato contra un límite
+     * de quince pedidos por minuto vuelve a dar 429, y encima el breaker de
+     * `brumita.ts` ya mandó el resto de la corrida al modelo de respaldo. Eso
+     * se resuelve espaciando las llamadas, no reintentándolas: ver `enTurno` en
+     * tests/integracion/brumita.test.ts.
      */
     retry: 1,
   },

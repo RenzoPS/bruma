@@ -44,14 +44,6 @@ export const EN_DOMINIO: { pregunta: string; grano: string }[] = [
 ];
 
 /**
- * Ninguna de estas debería recuperar nada.
- *
- * Las dos últimas son las importantes: **son sobre la cafetería**, pero se
- * responden con la carta y no con las fichas. Si el retrieval las agarra, el
- * modelo va a contestar un precio con prosa sobre orígenes en vez de llamar a
- * la tool que lee la tabla.
- */
-/**
  * Preguntas ajenas **lejanas**: ni siquiera comparten el vocabulario.
  *
  * Son las que el umbral sí puede filtrar, y con margen: miden entre 0.536 y
@@ -94,10 +86,4 @@ export const FUERA_DE_DOMINIO_CERCANO: string[] = [
   "tienen algún grano de Kenia o de Ruanda",
   "hacen envíos al interior del país",
   "tienen opciones sin cafeína para la tarde",
-];
-
-/** Todas juntas, para el calibrador. */
-export const FUERA_DE_DOMINIO: string[] = [
-  ...FUERA_DE_DOMINIO_LEJANO,
-  ...FUERA_DE_DOMINIO_CERCANO,
 ];
