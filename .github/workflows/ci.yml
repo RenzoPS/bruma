@@ -76,6 +76,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # `pnpm typecheck` corre `next typegen` antes de tsc. Hace falta: los tipos
+      # de rutas y layouts —LayoutProps entre ellos— los genera Next en
+      # .next/types/, asi que en un checkout limpio no existen todavia. En local
+      # nunca se noto porque siempre habia un .next de alguna corrida anterior.
       - run: pnpm typecheck
 
       - run: pnpm lint

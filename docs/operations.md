@@ -77,6 +77,11 @@ the server starts, not when a visitor asks the first question.
 | `pnpm dev` · `pnpm build` · `pnpm typecheck` · `pnpm lint` | |
 | `pnpm test` | The pure helpers behind the "Consultó" label — no jsdom |
 
+`pnpm typecheck` runs `next typegen` first. Next generates the route and layout
+types — `LayoutProps` among them — into `.next/types/`, so on a clean checkout
+they do not exist yet and `tsc` fails on `layout.tsx`. It never showed up
+locally because there was always a `.next` from an earlier run.
+
 | At the root | |
 |---|---|
 | `docker compose up --build` | The whole stack |
