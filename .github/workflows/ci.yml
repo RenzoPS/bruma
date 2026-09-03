@@ -1,0 +1,84 @@
+# Lo que tiene que estar verde para mergear.
+#
+# Corre lo que NO necesita cuota de Gemini ni una base con el índice armado:
+# tipos, tests unitarios, lint y build. Los tests de integración y `rag:evaluar`
+# quedan afuera a propósito — pegan contra la API de Google, y un CI que falla
+# porque se agotó una cuota gratuita enseña a ignorar el CI.
+#
+# Las dos apps son independientes: cada una con su lockfile y su node_modules.
+# Por eso son dos jobs y no uno con dos pasos, y por eso cada uno cachea por
+# separado. Corren en paralelo.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Un push arriba de otro cancela la corrida anterior: lo que importa es si el
+# último commit está sano, no el del medio.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API · tipos y tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          # La API corre TypeScript sin build. Node 24 es el piso.
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: apps/api/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      # `datos-maestros.test.ts` lee apps/web como texto para que los precios,
+      # el horario y las alturas no deriven entre las dos apps. Funciona porque
+      # el checkout trae el repo entero.
+      - run: pnpm test
+
+  web:
+    name: Web · tipos, lint, tests y build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      - run: pnpm lint
+
+      # Solo las funciones puras que leen las partes de tool de un mensaje: son
+      # las que deciden que dice el rotulo "Consultó" abajo de cada respuesta, y
+      # las unicas que pueden estar mal sin verse mal.
+      - run: pnpm test
+
+      # El build es parte del CI y no un extra: `output: standalone` resuelve
+      # cosas en tiempo de build, así que un error de configuración solo aparece
+      # acá. Ya pasó una vez con un rewrite — ver docs/operations.md.
+      - run: pnpm build
