@@ -4,6 +4,7 @@ import { pipeUIMessageStreamToResponse, toUIMessageStream, type ModelMessage } f
 import { z } from "zod";
 import { limitarPorIp } from "../lib/limite.ts";
 import { responder } from "../agente/brumita.ts";
+import { conRastro, desde, nuevoRastro, registro } from "../lib/registro.ts";
 
 /**
  * El endpoint de la conversación.
@@ -122,22 +123,79 @@ export function crearChatRouter() {
         .map((m) => ({ role: m.role, content: textoDe(m) }))
         .filter((m) => m.content.length > 0);
 
-      const resultado = responder(mensajes, req.body.idioma ?? "es");
+      const idioma = req.body.idioma ?? "es";
+      const marca = performance.now();
 
-      await pipeUIMessageStreamToResponse({
-        response: res,
-        // Las partes de tool viajan al front a propósito: abajo de cada
-        // respuesta se muestra qué consultó, y esa es la mitad visible del
-        // ruteo.
-        stream: toUIMessageStream({
-          stream: resultado.stream,
-          onError: (error) => {
-            // El default del SDK ya no filtra el detalle al cliente. Acá se
-            // registra del lado del servidor, que es donde sirve.
-            console.error("Brumita falló durante el stream:", error);
-            return "Se me cortó la respuesta. Probá de nuevo.";
-          },
-        }),
+      // Todo lo que pase adentro —las tools, el fallback de modelo— hereda este
+      // id y queda atado a esta pregunta en el log.
+      await conRastro(nuevoRastro(), async () => {
+        registro.info({
+          evento: "chat.entra",
+          idioma,
+          turnos: mensajes.length,
+          largoPregunta: mensajes.at(-1)?.content.length ?? 0,
+        });
+
+        const resultado = responder(mensajes, idioma);
+
+        await pipeUIMessageStreamToResponse({
+          response: res,
+          // Las partes de tool viajan al front a propósito: abajo de cada
+          // respuesta se muestra qué consultó, y esa es la mitad visible del
+          // ruteo.
+          stream: toUIMessageStream({
+            stream: resultado.stream,
+            onError: (error) => {
+              registro.error({
+                evento: "chat.stream",
+                ms: desde(marca),
+                error: error instanceof Error ? error.message : String(error),
+              });
+              return "Se me cortó la respuesta. Probá de nuevo.";
+            },
+          }),
+        });
+
+        // Después de que el stream terminó: acá `toolCalls` y `usage` ya están
+        // resueltos. Es la línea que cierra la pregunta y la que dice, de una
+        // sola mirada, si el ruteo fue el correcto y qué costó.
+        //
+        // Va con catch propio porque el visitante ya tiene su respuesta: que
+        // falle una promesa del SDK al leer las métricas no puede convertirse
+        // en un 500 sobre una respuesta que salió bien.
+        try {
+          const [llamadas, uso, motivo, texto] = await Promise.all([
+            resultado.toolCalls,
+            resultado.usage,
+            resultado.finishReason,
+            resultado.text,
+          ]);
+
+          // Una respuesta vacía es un fallo aunque el stream haya terminado
+          // bien, y no deja ninguna otra huella: el visitante ve una burbuja en
+          // blanco y los logs, un 200. Pasa cuando el modelo gasta todos los
+          // pasos llamando tools y se queda sin turno para escribir — medido, 1
+          // de cada 5 veces con una pregunta que cruza sabor y stock.
+          //
+          // Se registra como warn con el motivo del SDK: `tool-calls` significa
+          // que cortó el techo de pasos, no que terminó.
+          const nivel = texto.trim().length === 0 ? registro.warn : registro.info;
+          nivel({
+            evento: "chat.sale",
+            ms: desde(marca),
+            tools: [...new Set(llamadas.map((l) => l.toolName))],
+            pasos: llamadas.length,
+            motivo,
+            vacia: texto.trim().length === 0,
+            tokens: uso.totalTokens,
+          });
+        } catch (error) {
+          registro.warn({
+            evento: "chat.sale",
+            ms: desde(marca),
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       });
     },
   );

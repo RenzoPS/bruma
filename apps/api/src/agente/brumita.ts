@@ -2,6 +2,7 @@ import { google } from "@ai-sdk/google";
 import { isStepCount, streamText, wrapLanguageModel, type ModelMessage } from "ai";
 import { herramientas } from "./herramientas.ts";
 import { INSTRUCCIONES, directivaDeIdioma } from "./prompt.ts";
+import { registro } from "../lib/registro.ts";
 
 /**
  * Brumita: el prompt, las tools y el modelo, en un solo lugar.
@@ -45,11 +46,23 @@ const RESPALDO = "gemini-3.1-flash-lite";
  * Cuántos turnos de tool puede encadenar antes de tener que contestar.
  *
  * Una pregunta que cruza carta y ficha —"¿cuál me recomendás para prensa y
- * cuánto sale?"— necesita dos llamadas y después la respuesta. Cinco deja
- * margen para una corrección sin abrir la puerta a que se quede dando vueltas
- * consumiendo cuota.
+ * cuánto sale?"— necesita dos llamadas y después la respuesta.
+ *
+ * **Estuvo en cinco y cinco era poco, medido.** Con la pregunta "¿qué grano
+ * tenés que sea frutado y que me lo pueda llevar hoy?", cinco corridas seguidas
+ * dieron 2, 2, 2, 5 y 3 llamadas. La de cinco tocó el techo y se quedó sin
+ * turno para escribir: el visitante recibió una burbuja **vacía**. O sea que el
+ * límite no cortaba un loop, cortaba una respuesta que estaba por salir.
+ *
+ * Ocho deja margen para esa cola larga sin dejar de ser un techo. Y el techo
+ * sigue haciendo falta: es lo único que impide que una conversación rara se
+ * quede dando vueltas gastando cuota.
+ *
+ * Que el visitante no vea silencio cuando igual se toca el techo es problema
+ * aparte, y se resuelve en los otros dos lados: la ruta lo registra como warn y
+ * el front muestra el reintento en vez de una burbuja en blanco.
  */
-const PASOS = 5;
+const PASOS = 8;
 
 /**
  * Los códigos por los que vale la pena cambiar de modelo — y **503 no es uno**.
@@ -129,7 +142,10 @@ const modelo = wrapLanguageModel({
     wrapStream: async ({ doStream, params }) => {
       // Si el primario se cayo hace poco, se va derecho al respaldo en vez de
       // volver a esperar su timeout.
-      if (!primarioEnPie()) return google(RESPALDO).doStream(params);
+      if (!primarioEnPie()) {
+        registro.info({ evento: "modelo", modelo: RESPALDO, motivo: "enfriamiento", codigo: primarioCaidoPor });
+        return google(RESPALDO).doStream(params);
+      }
 
       try {
         return await doStream();
@@ -138,7 +154,10 @@ const modelo = wrapLanguageModel({
         if (codigo === undefined || !CODIGOS_DE_RESPALDO.has(codigo)) throw error;
         primarioCaidoDesde = Date.now();
         primarioCaidoPor = codigo;
-        console.warn(`${MODELO} no respondió, se reintenta con ${RESPALDO}`);
+        // Warn y no info: que el primario se caiga es lo que hay que ver en el
+        // log sin buscarlo. Un dia entero contestando desde el respaldo es un
+        // sitio que anda peor sin que nadie se entere.
+        registro.warn({ evento: "modelo", modelo: RESPALDO, motivo: "respaldo", codigo, primario: MODELO });
         return google(RESPALDO).doStream(params);
       }
     },

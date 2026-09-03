@@ -147,6 +147,7 @@ export const en: Textos = {
     fuentesEtiqueta: "Checked",
     error: "The answer was cut off. Could be the connection, or Brumita being busy.",
     demasiadas: "Too many questions in a row. Give it a moment and try again.",
+    vacia: "I kept searching and ran out of turns before answering. Try again.",
     ficcion: "BRUMA is not a real place: it's a portfolio piece. Prices and origins are invented.",
   },
 
@@ -284,6 +285,24 @@ export const en: Textos = {
     granos: {
       titulo: "Beans — BRUMA",
       desc: "The origins we roast on site, in 250 g bags with the roast date printed.",
+    },
+  },
+
+  errores: {
+    noEncontrada: {
+      etiqueta: "404",
+      titulo: "This page isn't here.",
+      texto:
+        "The link may be old or mistyped. Everything is reachable from the home page — there are three of them.",
+      volver: "Go to the home page",
+    },
+    roto: {
+      etiqueta: "Error",
+      titulo: "Something broke on our side.",
+      texto:
+        "It isn't your connection. Try again; if it keeps happening, the rest of the site still works.",
+      reintentar: "Try again",
+      volver: "Go to the home page",
     },
   },
 };

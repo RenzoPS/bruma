@@ -97,11 +97,48 @@ export function PanelBrumita() {
     return () => window.removeEventListener("scroll", alScrollear);
   }, []);
 
+  // Escape cierra, y el Tab no se escapa del panel.
+  //
+  // Lo segundo faltaba y se notaba: en pantalla angosta el panel tapa la pagina
+  // entera, pero el foco seguia caminando por los links de atras, invisibles.
+  // Quien navega con teclado terminaba tabulando a ciegas por un sitio que no
+  // podia ver. Es lo que `aria-modal` le promete a un lector de pantalla, asi
+  // que sin esto la promesa era falsa.
+  //
+  // El ciclo se arma leyendo el DOM en el momento del Tab y no con una lista
+  // guardada: el contenido del panel cambia —aparecen las fuentes, el boton de
+  // reintentar, el de detener— y una lista calculada al abrir queda vieja.
   useEffect(() => {
     if (!abierto) return;
+
     const alTeclear = (evento: KeyboardEvent) => {
-      if (evento.key === "Escape") cerrar();
+      if (evento.key === "Escape") {
+        cerrar();
+        return;
+      }
+      if (evento.key !== "Tab") return;
+
+      const panel = document.getElementById("panel-brumita");
+      if (!panel) return;
+
+      const focusables = panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not(:disabled), textarea:not(:disabled), input:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      );
+      const primero = focusables[0];
+      const ultimo = focusables[focusables.length - 1];
+      if (!primero || !ultimo) return;
+
+      // Solo se interviene en los dos bordes; en el medio manda el navegador,
+      // que ya sabe cual es el orden correcto.
+      if (evento.shiftKey && document.activeElement === primero) {
+        evento.preventDefault();
+        ultimo.focus();
+      } else if (!evento.shiftKey && document.activeElement === ultimo) {
+        evento.preventDefault();
+        primero.focus();
+      }
     };
+
     window.addEventListener("keydown", alTeclear);
     return () => window.removeEventListener("keydown", alTeclear);
   }, [abierto, cerrar]);
@@ -166,6 +203,10 @@ export function PanelBrumita() {
       <div
         id="panel-brumita"
         role="dialog"
+        // Con el foco atrapado adentro (ver el efecto de arriba), esto ya no es
+        // una promesa vacia: le dice al lector de pantalla que el resto de la
+        // pagina no esta disponible mientras el panel este abierto.
+        aria-modal={abierto}
         aria-label={t.brumita.etiqueta}
         // `hidden` y no un desmontaje: el panel guarda su scroll y su borrador
         // entre aperturas, y la conversacion no parpadea al volver.
@@ -245,6 +286,39 @@ export function PanelBrumita() {
                 {texto && (
                   <p className="mt-3 leading-relaxed whitespace-pre-wrap text-tinta">{texto}</p>
                 )}
+
+                {/* Un turno de Brumita que termino sin una sola letra.
+                    Pasa cuando gasta todos sus pasos llamando tools y se queda
+                    sin turno para escribir: medido, 1 de cada 5 veces con una
+                    pregunta que cruza sabor y stock. Del lado del servidor se
+                    subio el techo de pasos, pero el techo sigue existiendo y
+                    algun dia se vuelve a tocar.
+
+                    Sin esto la burbuja quedaba en blanco, que es la peor forma
+                    de fallar: no parece un error, parece que Brumita no tiene
+                    nada que decir. Se muestra la misma salida que un error de
+                    verdad —un motivo y el reintento— porque para quien pregunta
+                    es exactamente eso.
+
+                    La condicion pide `!trabajando` y que sea el ultimo: mientras
+                    la respuesta se esta escribiendo, no tener texto todavia es
+                    lo normal. */}
+                {mensaje.role === "assistant" &&
+                  !texto &&
+                  !trabajando &&
+                  mensaje.id === ultimo?.id && (
+                    <>
+                      <p className="mt-3 leading-relaxed text-tinta-suave">{t.brumita.vacia}</p>
+                      <button
+                        type="button"
+                        onClick={reintentar}
+                        className="t-etiqueta mt-4 flex items-center gap-2 border border-tinta px-5 py-3 text-tinta transition-colors duration-300 hover:border-[var(--etapa)] hover:text-[var(--etapa)]"
+                      >
+                        <RotateCcw size={14} strokeWidth={1.5} aria-hidden />
+                        {t.brumita.reintentar}
+                      </button>
+                    </>
+                  )}
 
                 {fuentes.length > 0 && (
                   <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2">

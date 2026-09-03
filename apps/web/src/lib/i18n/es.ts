@@ -144,6 +144,9 @@ export const es = {
     fuentesEtiqueta: "Consultó",
     error: "Se cortó la respuesta. Puede ser la conexión, o que Brumita esté saturada.",
     demasiadas: "Demasiadas preguntas seguidas. Esperá un momento y volvé a intentar.",
+    // Se quedó sin turnos buscando y no llegó a escribir. Se dice qué pasó sin
+    // hablar de "pasos" ni de "herramientas", que no significan nada del otro lado.
+    vacia: "Me quedé buscando y no llegué a contestarte. Probá de nuevo.",
     ficcion: "BRUMA no existe: es una pieza de portfolio. Los precios y los orígenes son inventados.",
   },
 
@@ -281,6 +284,27 @@ export const es = {
     granos: {
       titulo: "Granos — BRUMA",
       desc: "Los orígenes que tostamos en el local, en bolsa de 250 g con la fecha de tueste impresa.",
+    },
+  },
+
+  // Las dos pantallas que nadie busca. El registro es el mismo que el del resto
+  // del sitio: se dice qué pasó y qué se puede hacer, sin pedir disculpas ni
+  // hacer un chiste de café.
+  errores: {
+    noEncontrada: {
+      etiqueta: "404",
+      titulo: "Esta página no está.",
+      texto:
+        "El link puede estar viejo o mal escrito. Desde el inicio se llega a todo: son tres páginas.",
+      volver: "Ir al inicio",
+    },
+    roto: {
+      etiqueta: "Error",
+      titulo: "Se rompió algo de este lado.",
+      texto:
+        "No es tu conexión. Probá de nuevo; si vuelve a pasar, el resto del sitio sigue funcionando.",
+      reintentar: "Probar de nuevo",
+      volver: "Ir al inicio",
     },
   },
 } as const;
