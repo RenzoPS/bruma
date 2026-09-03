@@ -122,6 +122,10 @@ guarantee runtime key lookup cannot give you.
 
 Almost all of them are AI-generated from the prompts in
 [prompts-gemini.md](prompts-gemini.md). Five come from libre-licensed banks and
-four of those require attribution — see [creditos-imagenes.md](creditos-imagenes.md),
-which also flags that the footer's "all images are AI-generated" line needs
-fixing before this ships.
+all five are **CC0**, so none requires attribution — see
+[images-credits.md](images-credits.md).
+
+Four of those five used to be CC BY, which does require visible credit that the
+footer never gave. They were replaced rather than credited: four photo credits in
+the footer of a portfolio site weigh more than the photos, and replacing removes
+the obligation instead of administering it.
