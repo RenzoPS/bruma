@@ -16,8 +16,6 @@ frontend with its own visual system.
 | [evals.md](evals.md) | How answer quality is measured, and what the score does not say |
 | [decisions.md](decisions.md) | Every decision that was measured, with the numbers |
 | [images-credits.md](images-credits.md) | Image provenance and attribution |
-| [prompts-gemini.md](prompts-gemini.md) | The prompts the images were generated from |
-| [specs/](specs/) | The two original design documents, in Spanish, kept as history |
 
 ## The one thing to read first
 

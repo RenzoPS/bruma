@@ -50,6 +50,41 @@ Run against the live system:
 
 The model generates the **argument**, not the **statement**.
 
+### What comes back, and what the model actually sees
+
+The model does not call anything. It emits a tool call as *text* — a name and
+some arguments — and our code is what runs:
+
+```
+1. we send    prompt + history + the four tool descriptions
+2. model emits  { toolName: "buscarEnFichas", args: { consulta: "…" } }
+                 ← still text. Nothing has executed.
+3. we run     Zod validates the args, then the tool's `execute`
+4. we send    the result back as another message in the conversation
+5. model      writes the answer, now with the data in front of it
+```
+
+Step 3 is where Drizzle and pgvector do their work, and **none of it is visible
+to the model**. It never sees the schema, a `SELECT`, or a single vector.
+Embeddings exist to *find* the chunks; what travels back is plain data:
+
+```ts
+{
+  contenido: "En taza da chocolate amargo y nuez, con un cuerpo…",
+  granoClave: "cerrado",
+  granoNombre: "Cerrado",
+  granoPrecio: 15500,
+  granoStock: true,
+  similitud: 0.741
+}
+```
+
+That shape is also the answer to how the model groups five chunks from three
+different beans: it reads `granoNombre` on each one. The `JOIN` already happened
+in Postgres — there is no relational reasoning left for the model to do, which
+is the point. It is the same reason `granoPrecio` and `granoStock` ride along:
+see [rag.md](rag.md) for the hallucination that closed.
+
 ## The prompt
 
 `src/agente/prompt.ts`. It is a guardrail, not a character sheet. Every line that
@@ -97,7 +132,7 @@ are integration tests for both crossings.
 | Primary | `gemini-3.5-flash-lite` |
 | Fallback | `gemini-3.1-flash-lite` |
 | Temperature | 0 |
-| Max tool rounds | 5 |
+| Max tool rounds | 8 |
 
 Pinned, and not out of habit. `gemini-flash-latest` resolves to
 `gemini-3.7-flash`, whose free tier is **20 requests a day** — measured against

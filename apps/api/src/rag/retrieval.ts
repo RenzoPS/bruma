@@ -87,6 +87,18 @@ export const MAXIMO = 5;
  * dos órdenes dan el mismo resultado —invertir el signo no cambia el orden— y
  * con 20 chunks tampoco cambia el tiempo, pero uno escala y el otro no.
  *
+ * **Corrección: ese EXPLAIN no era el experimento válido.** Se corrió sobre una
+ * consulta pelada, no sobre esta función. Sobre la función real —con el JOIN
+ * contra `granos` y el WHERE del umbral— a 20 filas el planner **no usa HNSW**
+ * se escriba como se escriba el filtro: a esa escala el seq scan gana y elige
+ * bien. Remedido con 20.020 filas, las dos formas del filtro sí usan
+ * `Index Scan using chunks_embedding_idx` y cuestan lo mismo (262.16 vs 262.12).
+ *
+ * O sea: el índice es alcanzable y el diseño se sostiene, pero lo que lo prueba
+ * es la medición a 20.020 filas, no el ORDER BY aislado de arriba. Queda escrito
+ * porque un comentario que se corrige en la doc y no en el código es un
+ * comentario que va a volver a engañar. Ver docs/rag.md §Retrieval.
+ *
  * Lo que se pierde: el orden y el umbral dejan de estar tipados por Drizzle y
  * pasan a vivir en una migración. Es el costo del patrón, y a cambio la lógica
  * de recuperación queda junto a los datos y se puede llamar desde cualquier

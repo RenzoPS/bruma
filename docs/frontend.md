@@ -120,8 +120,7 @@ guarantee runtime key lookup cannot give you.
 
 ## Images
 
-Almost all of them are AI-generated from the prompts in
-[prompts-gemini.md](prompts-gemini.md). Five come from libre-licensed banks and
+Almost all of them are AI-generated. Five come from libre-licensed banks and
 all five are **CC0**, so none requires attribution — see
 [images-credits.md](images-credits.md).
 

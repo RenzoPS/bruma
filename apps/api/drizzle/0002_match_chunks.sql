@@ -16,6 +16,19 @@
 -- es idéntico —invertir el signo no cambia el orden— pero uno escala y el otro
 -- no. Con 20 chunks da lo mismo; con veinte mil, no.
 --
+-- CORRECCIÓN POSTERIOR: ese EXPLAIN se corrió sobre una consulta pelada, no
+-- sobre esta función. Sobre la función real —con el JOIN y el WHERE— a 20 filas
+-- el planner no usa HNSW se escriba como se escriba el filtro. Remedido con
+-- 20.020 filas, las dos formas usan `Index Scan using chunks_embedding_idx` y
+-- cuestan lo mismo (262.16 vs 262.12). El índice es alcanzable y el diseño se
+-- sostiene, pero lo prueba esa medición y no el ORDER BY aislado de arriba.
+-- Ver docs/rag.md §Retrieval.
+--
+-- El texto de esta migración ya se aplicó; se toca solo el comentario. Drizzle
+-- decide qué aplicar comparando el `created_at` del journal, no un checksum del
+-- archivo (a diferencia de Flyway), así que editar estas líneas no reabre la
+-- migración ni rompe una base existente.
+--
 -- El umbral sigue siendo un parámetro y no una constante acá adentro: sale de
 -- `pnpm rag:calibrar` y pertenece al corpus, no a la base. Que viaje como argumento
 -- deja recalibrarlo sin escribir una migración.

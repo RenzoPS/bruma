@@ -28,6 +28,51 @@ only thing indexed.
 HNSW index, and three columns of indexing state — `posicion`,
 `modelo_embedding`, `ficha_hash` — explained in [rag.md](rag.md).
 
+### How a ficha relates to its chunks
+
+One table, not one per bean, and **the ficha itself is never embedded whole**.
+`granos.ficha` is a plain `text` column; there is no vector of the complete
+prose anywhere. Cutting happens first, and each piece gets its own vector:
+
+```
+granos.ficha (text, ~1900 chars)
+     │  partirEnChunks()
+     ▼
+5 pieces of text
+     │  embeberDocumentos()   one call, five vectors
+     ▼
+5 rows in `chunks`
+```
+
+So the four fichas produce twenty rows in a single shared table:
+
+```
+chunks
+┌────┬──────────┬──────────┬──────────────────────────┬──────────────────┐
+│ id │ grano_id │ posicion │ contenido                │ embedding        │
+├────┼──────────┼──────────┼──────────────────────────┼──────────────────┤
+│  1 │    1     │    0     │ origin paragraph         │ [0.021, -0.44,…] │
+│  2 │    1     │    1     │ process paragraph        │ [0.113,  0.08,…] │
+│  3 │    1     │    2     │ roast paragraph          │ [-0.07,  0.31,…] │
+│  6 │    2     │    0     │ (next bean starts here)  │ [-0.31,  0.02,…] │
+└────┴──────────┴──────────┴──────────────────────────┴──────────────────┘
+```
+
+The link is a foreign key with `ON DELETE cascade`, so a bean cannot leave
+orphaned chunks pointing at an origin that no longer exists:
+
+```sql
+ALTER TABLE "chunks" ADD CONSTRAINT "chunks_grano_id_granos_id_fk"
+  FOREIGN KEY ("grano_id") REFERENCES "public"."granos"("id") ON DELETE cascade
+```
+
+`UNIQUE (grano_id, posicion)` is what makes `posicion` mean something: two
+chunks of the same ficha cannot occupy the same slot.
+
+Note that the cascade is a safety net, not the normal path. Master data
+**never deletes** — see *What happens when something disappears* below — so in
+practice chunks are replaced by `rag:ingest`, not cascaded away.
+
 Prices are stored in cents. Never floats: `0.1 + 0.2` is not `0.3` and a menu
 does not round itself.
 
@@ -144,7 +189,46 @@ fails. The second adds `clave UNIQUE`. The third is a **custom migration** —
 generated with `drizzle-kit generate --custom` and registered in the journal like
 any other — carrying `match_chunks`. A Postgres function is part of the
 structure of the database, so `pnpm db:migrate` on an empty database has to be
-enough to reconstruct it.
+enough to reconstruct it. `0005` is the second custom one: it drops and
+recreates `match_chunks` to return `grano_precio` and `grano_stock`, because
+Postgres will not let `CREATE OR REPLACE` change a function's return type.
+
+Which of the six were written by hand is worth knowing, because the answer is
+"the ones Drizzle structurally cannot derive":
+
+| Migration | Origin |
+|---|---|
+| `0000_puzzling_zombie` | Generated, plus a hand-added `CREATE EXTENSION vector` |
+| `0001_clave_natural` | Generated |
+| `0002_match_chunks` | **Custom** — `CREATE FUNCTION` has no schema representation |
+| `0003_chunks_posicion_y_modelo` | Generated, plus a hand-added `DELETE FROM chunks` |
+| `0004_chunks_ficha_hash` | Generated, plus the same `DELETE` |
+| `0005_match_chunks_con_stock` | **Custom** — `DROP` + `CREATE FUNCTION` |
+
+`schema.ts` can declare tables, columns, indexes and constraints. Functions and
+extensions are outside that vocabulary, which is why they arrive through
+`--custom` rather than through a diff.
+
+### The `.sql` file runs once; the function runs per search
+
+These are two different moments and conflating them makes `match_chunks` hard to
+place:
+
+| | What runs | When | How often |
+|---|---|---|---|
+| **Install** | `drizzle-kit migrate` executes `0002`/`0005` | Deploy or setup | Once per database |
+| **Use** | `SELECT * FROM match_chunks(…)` in `src/rag/retrieval.ts` | The model chose `buscarEnFichas` | Per question |
+
+After the migration runs, the function is an object living inside Postgres, like
+a table. Nothing reads the `.sql` file again — at runtime the only caller is one
+line of `buscarEnFichas()`, and it only fires when the model routed there. A
+price question never touches it.
+
+One consequence of Drizzle's design worth recording: `drizzle-kit migrate`
+decides what to apply by comparing the journal's `created_at` against the last
+applied timestamp, and **never validates a checksum** the way Flyway does. So
+editing the comments in an applied migration is safe, and editing its statements
+silently does nothing — the file will not be re-run.
 
 Two of the migrations start by emptying `chunks`. That is safe by design and it
 illustrates the property: chunks are derived. The source of truth is
