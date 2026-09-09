@@ -23,12 +23,22 @@ bruma/
 
 ## The site
 
-| | |
-|:--:|:--:|
-| ![BRUMA landing page](docs/img/home.png) | ![The café page](docs/img/cafeteria.png) |
-| The landing. | The café — hours, tables, wifi: the things people actually ask before walking in. |
-| ![The beans page](docs/img/granos.png) | ![Brumita answering a question about beans](docs/img/brumita.png) |
-| The beans — four origins at a time, roasted on site. | **Brumita.** The answer names a bean, a tasting note and a price, and lists underneath which documents it retrieved to say it. |
+**The landing.**
+
+![BRUMA landing page](docs/img/home.png)
+
+**The café** — hours, tables, wifi: the things people actually ask before walking in.
+
+![The café page](docs/img/cafeteria.png)
+
+**The beans** — four origins at a time, roasted on site.
+
+![The beans page](docs/img/granos.png)
+
+**Brumita.** The answer names a bean, a tasting note and a price, and lists underneath which
+documents it retrieved to say it.
+
+![Brumita answering a question about beans](docs/img/brumita.png)
 
 The assistant is not a chat bubble bolted onto a template. It opens as a panel over the page you
 are already reading, it answers in the same voice the rest of the site is written in, and every
