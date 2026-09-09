@@ -21,6 +21,21 @@ bruma/
 
 ---
 
+## The site
+
+| | |
+|:--:|:--:|
+| ![BRUMA landing page](docs/img/home.png) | ![The café page](docs/img/cafeteria.png) |
+| The landing. | The café — hours, tables, wifi: the things people actually ask before walking in. |
+| ![The beans page](docs/img/granos.png) | ![Brumita answering a question about beans](docs/img/brumita.png) |
+| The beans — four origins at a time, roasted on site. | **Brumita.** The answer names a bean, a tasting note and a price, and lists underneath which documents it retrieved to say it. |
+
+The assistant is not a chat bubble bolted onto a template. It opens as a panel over the page you
+are already reading, it answers in the same voice the rest of the site is written in, and every
+answer carries its sources — so you can tell what it looked up from what it made up.
+
+---
+
 ## What is interesting here
 
 Not the architecture — hybrid retrieval over pgvector is the textbook shape, and
